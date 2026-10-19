@@ -1,5 +1,5 @@
-````text
-``` mermaid
+
+```mermaid
 flowchart LR
     A([Web Server]) -->|HTML| B[Web Front End]
     B <--> C[API]
@@ -7,7 +7,7 @@ flowchart LR
     C <--> E[(GIS Database)]
 ```
 
-``` mermaid
+```mermaid
 flowchart LR
     A[User Applications]
     B[API]
@@ -25,4 +25,3 @@ flowchart LR
 
     style backend fill:#fdf2fd,stroke:#f0a0f0
 ```
-````
