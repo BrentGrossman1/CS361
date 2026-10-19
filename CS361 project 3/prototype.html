@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bend Bike Shop – Reserve Bike Prototype</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background: #eeeeee;
+    color: #222;
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px;
+  }
+  .screen-label { font-size: 13px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: #555; margin-bottom: 10px; }
+  .phone {
+    width: 100%;
+    max-width: 380px;
+    height: 760px;
+    max-height: calc(100vh - 100px);
+    background: #fff;
+    border: 3px solid #222;
+    border-radius: 28px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .topbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 10px 16px; border-bottom: 2px solid #222; min-height: 60px; }
+  .topbar h1 { font-size: 17px; margin: 0; }
+  .content { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+  .screen { display: none; flex-direction: column; height: 100%; }
+  .screen.active { display: flex; }
+
+  button { font: inherit; cursor: pointer; }
+  .btn { width: 100%; min-height: 48px; border: 2px solid #222; border-radius: 8px; background: #222; color: #fff; font-weight: 600; font-size: 16px; }
+  .btn.secondary { background: #fff; color: #222; }
+  .link { background: none; border: none; padding: 0; min-height: 44px; font-weight: 600; text-decoration: underline; color: #222; }
+  .small-btn { min-height: 44px; padding: 0 14px; border: 2px solid #222; border-radius: 8px; background: #222; color: #fff; font-weight: 600; }
+
+  .placeholder { background: #e3e3e3; border: 2px solid #222; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #444; font-size: 13px; text-align: center; }
+  .muted { color: #555; font-size: 13px; }
+  .card { border: 2px solid #222; border-radius: 8px; padding: 10px; display: flex; gap: 10px; align-items: center; }
+  .card .placeholder { width: 72px; height: 56px; flex: none; }
+  .box { border: 2px solid #222; border-radius: 8px; padding: 8px 12px; }
+  .row-between { display: flex; justify-content: space-between; gap: 8px; padding: 6px 0; border-bottom: 1px solid #bbb; font-size: 15px; }
+  .row-between:last-child { border-bottom: none; }
+  .total { display: flex; justify-content: space-between; font-size: 16px; border-top: 2px solid #222; padding-top: 10px; }
+
+  label.field { display: flex; flex-direction: column; gap: 4px; font-size: 13px; font-weight: 600; }
+  input, select { font: inherit; font-size: 15px; font-weight: 400; min-height: 44px; border: 2px solid #222; border-radius: 6px; padding: 0 10px; background: #fff; width: 100%; }
+  .two { display: flex; gap: 10px; }
+  .two > * { flex: 1; min-width: 0; }
+  .error { color: #b00020; font-size: 13px; font-weight: 600; min-height: 1em; }
+  .radio { display: flex; align-items: center; gap: 10px; border: 2px solid #222; border-radius: 8px; padding: 0 12px; min-height: 48px; font-size: 15px; font-weight: 400; }
+  .radio input, .check input { width: auto; min-height: 0; }
+  .check { display: flex; gap: 8px; align-items: flex-start; font-size: 13px; color: #555; }
+  .center { text-align: center; }
+  .note { margin-top: 14px; font-size: 13px; color: #555; max-width: 380px; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="screen-label" id="screenLabel">Home Screen</div>
+<div class="phone">
+
+  <!-- 1. Home Screen -->
+  <section class="screen active" id="home" data-title="Home Screen">
+    <div class="topbar"><h1>Bend Bike Shop</h1><button class="link" onclick="goTo('login', 'home')">Sign In</button></div>
+    <div class="content">
+      <div class="placeholder" style="height: 180px">[Hero Photo – Bend scenery]</div>
+      <div>
+        <div style="font-size: 22px; font-weight: 700">Rent a bike and explore Bend</div>
+        <div class="muted" style="margin-top: 6px">Road, mountain, and hybrid bikes available by the hour or day.</div>
+      </div>
+      <button class="btn" onclick="goTo('catalogue')">Browse Bikes</button>
+      <div class="placeholder" style="height: 80px">[Shop hours &amp; address]</div>
+    </div>
+  </section>
+
+  <!-- 2. Bike Catalogue -->
+  <section class="screen" id="catalogue" data-title="Bike Catalogue">
+    <div class="topbar"><button class="link" onclick="goTo('home')">&lt; Home</button><h1>Bike Catalogue</h1></div>
+    <div class="content">
+      <div class="two">
+        <label class="field">Bike Type
+          <select id="filterType" onchange="renderCatalogue()">
+            <option value="All">All</option><option>Road</option><option>Mountain</option><option>Hybrid</option>
+          </select>
+        </label>
+        <label class="field">Frame Size
+          <select id="filterSize" onchange="renderCatalogue()">
+            <option value="All">All</option><option>S</option><option>M</option><option>L</option>
+          </select>
+        </label>
+      </div>
+      <div class="muted" id="matchCount"></div>
+      <div id="bikeList" style="display: flex; flex-direction: column; gap: 10px"></div>
+    </div>
+  </section>
+
+  <!-- 3. Bike Details -->
+  <section class="screen" id="details" data-title="Bike Details">
+    <div class="topbar"><button class="link" onclick="goTo('catalogue')">&lt; Catalogue</button><h1>Bike Details</h1></div>
+    <div class="content">
+      <div class="placeholder" style="height: 180px">[Large Bike Photo]</div>
+      <div>
+        <div style="font-size: 22px; font-weight: 700" id="detailName"></div>
+        <div class="muted" id="detailDesc"></div>
+      </div>
+      <div>
+        <div class="row-between"><span>Type</span><strong id="detailType"></strong></div>
+        <div class="row-between"><span>Frame Size</span><strong id="detailSize"></strong></div>
+        <div class="row-between"><span>Price</span><strong id="detailPrice"></strong></div>
+        <div class="row-between"><span>Status</span><strong>Available</strong></div>
+      </div>
+      <button class="btn" onclick="goTo('period')">Add to Reservation</button>
+    </div>
+  </section>
+
+  <!-- 4. Select Rental Period -->
+  <section class="screen" id="period" data-title="Select Rental Period">
+    <div class="topbar"><button class="link" onclick="goTo('details')">&lt; Bike Details</button><h1>Rental Period</h1></div>
+    <div class="content">
+      <div class="card"><div class="placeholder">[Photo]</div><div><strong class="bikeName"></strong><div class="muted bikeMeta"></div></div></div>
+      <div class="two">
+        <label class="field">Pickup Date<input type="date" id="pickupDate" onchange="updateTotal()"></label>
+        <label class="field">Pickup Time<input type="time" id="pickupTime" value="09:00"></label>
+      </div>
+      <div class="two">
+        <label class="field">Return Date<input type="date" id="returnDate" onchange="updateTotal()"></label>
+        <label class="field">Return Time<input type="time" id="returnTime" value="17:00"></label>
+      </div>
+      <div class="total"><span>Estimated total</span><strong class="totalText">—</strong></div>
+      <div class="error" id="periodError"></div>
+      <button class="btn" onclick="submitPeriod()">Continue</button>
+    </div>
+  </section>
+
+  <!-- 5. Checkout Options -->
+  <section class="screen" id="checkout" data-title="Checkout Options">
+    <div class="topbar"><button class="link" onclick="goTo('period')">&lt; Rental Period</button><h1>Checkout</h1></div>
+    <div class="content">
+      <div class="box">
+        <strong>Reservation Summary</strong>
+        <div class="row-between"><span>Bike</span><strong class="bikeName"></strong></div>
+        <div class="row-between"><span>Pickup</span><strong class="pickupText"></strong></div>
+        <div class="row-between"><span>Return</span><strong class="returnText"></strong></div>
+        <div class="row-between"><span>Estimated total</span><strong class="totalText"></strong></div>
+      </div>
+      <div style="font-size: 18px; font-weight: 700">How would you like to check out?</div>
+      <button class="btn" onclick="goTo('guest')">Checkout as Guest</button>
+      <div class="muted center">or</div>
+      <button class="btn secondary" onclick="goTo('login', 'checkout')">Sign In</button>
+    </div>
+  </section>
+
+  <!-- 6. Guest Information -->
+  <section class="screen" id="guest" data-title="Guest Information">
+    <div class="topbar"><button class="link" onclick="goTo('checkout')">&lt; Checkout</button><h1>Your Details</h1></div>
+    <div class="content">
+      <div class="muted">Step 1 of 2 · We'll send your confirmation here.</div>
+      <label class="field">First Name<input id="firstName" placeholder="First name"></label>
+      <label class="field">Last Name<input id="lastName" placeholder="Last name"></label>
+      <label class="field">Email<input id="email" type="email" placeholder="name@email.com"></label>
+      <label class="field">Phone<input id="phone" type="tel" placeholder="(555) 555-5555"></label>
+      <label class="field">Height (for bike fit)<input id="height" placeholder="Optional"></label>
+      <div class="error" id="guestError"></div>
+      <button class="btn" onclick="submitGuest()">Continue to Payment</button>
+    </div>
+  </section>
+
+  <!-- 10. Login -->
+  <section class="screen" id="login" data-title="Login">
+    <div class="topbar"><button class="link" onclick="loginBack()" id="loginBackBtn">&lt; Checkout</button><h1>Sign In</h1></div>
+    <div class="content">
+      <div class="muted">Sign in to use your saved details and payment method.</div>
+      <label class="field">Email<input id="loginEmail" type="email" placeholder="name@email.com"></label>
+      <label class="field">Password<input id="loginPassword" type="password" placeholder="Password"></label>
+      <div><button class="link" onclick="alert('Prototype: a password reset link would be emailed.')">Forgot password?</button></div>
+      <div class="error" id="loginError"></div>
+      <button class="btn" onclick="submitLogin()">Sign In &amp; Continue</button>
+      <div class="muted center"><span id="loginAltText">Don't have an account?</span> <button class="link" id="loginAltBtn" onclick="loginAlternative()">Checkout as Guest</button></div>
+    </div>
+  </section>
+
+  <!-- 7. Payment -->
+  <section class="screen" id="payment" data-title="Payment">
+    <div class="topbar"><button class="link" onclick="paymentBack()" id="paymentBackBtn">&lt; Your Details</button><h1>Payment</h1></div>
+    <div class="content">
+      <div class="muted" id="paymentStep">Step 2 of 2 · Payment Method</div>
+      <label class="radio"><input type="radio" name="method" value="card" checked> Credit / Debit Card</label>
+      <label class="radio"><input type="radio" name="method" value="wallet"> Digital Wallet</label>
+      <label class="field">Card Number<input id="cardNumber" inputmode="numeric" placeholder="•••• •••• •••• ••••"></label>
+      <div class="two">
+        <label class="field">Expiration<input id="cardExp" placeholder="MM/YY"></label>
+        <label class="field">CVC<input id="cardCvc" inputmode="numeric" placeholder="123"></label>
+      </div>
+      <label class="field">Billing ZIP<input id="cardZip" inputmode="numeric" placeholder="ZIP code"></label>
+      <div class="muted">Your card is pre-authorized now. The final bill is paid at the shop when you return the bike.</div>
+      <div class="error" id="paymentError"></div>
+      <button class="btn" onclick="submitPayment()">Review Reservation</button>
+    </div>
+  </section>
+
+  <!-- 8. Review Reservation -->
+  <section class="screen" id="review" data-title="Review Reservation">
+    <div class="topbar"><button class="link" onclick="goTo('payment')">&lt; Payment</button><h1>Review</h1></div>
+    <div class="content">
+      <div class="box row-between" style="align-items: center"><div><strong>Bike</strong><div class="muted"><span class="bikeName"></span> · <span class="bikeMeta"></span></div></div><button class="link" onclick="goTo('catalogue')">Change</button></div>
+      <div class="box row-between" style="align-items: center"><div><strong>Rental Period</strong><div class="muted"><span class="pickupText"></span> → <span class="returnText"></span></div></div><button class="link" onclick="goTo('period')">Edit</button></div>
+      <div class="box row-between" style="align-items: center"><div><strong>Your Details</strong><div class="muted" id="reviewDetails"></div></div><button class="link" onclick="editDetails()">Edit</button></div>
+      <div class="box row-between" style="align-items: center"><div><strong>Payment</strong><div class="muted" id="reviewPayment"></div></div><button class="link" onclick="goTo('payment')">Edit</button></div>
+      <div class="total"><span>Estimated total</span><strong class="totalText"></strong></div>
+      <label class="check"><input type="checkbox" id="agreeTerms"> I agree to the rental terms and cancellation policy.</label>
+      <div class="error" id="reviewError"></div>
+      <button class="btn" onclick="finalize()">Finalize Reservation</button>
+    </div>
+  </section>
+
+  <!-- 9. Reservation Confirmation -->
+  <section class="screen" id="confirmation" data-title="Reservation Confirmation">
+    <div class="topbar" style="justify-content: center"><h1>Confirmation</h1></div>
+    <div class="content">
+      <div class="center" style="display: flex; flex-direction: column; align-items: center; gap: 8px">
+        <svg width="56" height="56" viewBox="0 0 56 56" fill="none" stroke="#222" stroke-width="3" aria-hidden="true"><circle cx="28" cy="28" r="25"/><path d="M17 29l7 7 15-16"/></svg>
+        <div style="font-size: 22px; font-weight: 700">Reservation Confirmed</div>
+        <div class="muted">A confirmation was sent to <span id="confirmEmail"></span>.</div>
+      </div>
+      <div class="box">
+        <div class="row-between"><span>Confirmation #</span><strong id="confirmNumber"></strong></div>
+        <div class="row-between"><span>Bike</span><strong class="bikeName"></strong></div>
+        <div class="row-between"><span>Pickup</span><strong class="pickupText"></strong></div>
+        <div class="row-between"><span>Return</span><strong class="returnText"></strong></div>
+      </div>
+      <div class="placeholder" style="height: 90px">[Map + shop address]</div>
+      <div class="muted">At pickup: bring a photo ID. You'll sign a waiver at the counter before your ride.</div>
+      <button class="btn secondary" onclick="resetDemo()">Back to Home</button>
+    </div>
+  </section>
+
+</div>
+<div class="note">Prototype of the Reserve Bike use case. Data is sample data and nothing is actually charged.</div>
+
+<script>
+  const bikes = [
+    { id: 1, name: "Trek Domane AL 2", type: "Road", size: "M", price: 45, desc: "Lightweight aluminum road bike for paved rides around town." },
+    { id: 2, name: "Specialized Allez", type: "Road", size: "L", price: 50, desc: "Fast, responsive road bike for longer distances." },
+    { id: 3, name: "Cannondale CAAD Optimo", type: "Road", size: "S", price: 45, desc: "Nimble road bike with a smaller frame." },
+    { id: 4, name: "Giant Talon 2", type: "Mountain", size: "M", price: 55, desc: "Hardtail mountain bike for trails like Phil's." },
+    { id: 5, name: "Trek Marlin 7", type: "Mountain", size: "L", price: 60, desc: "Trail-ready hardtail with front suspension." },
+    { id: 6, name: "Giant Escape 3", type: "Hybrid", size: "M", price: 35, desc: "Comfortable hybrid for casual rides and paths." },
+    { id: 7, name: "Trek FX 2", type: "Hybrid", size: "S", price: 35, desc: "Upright hybrid, easy to ride around downtown." }
+  ];
+
+  const reservation = {
+    bike: null,
+    days: 0,
+    total: 0,
+    signedIn: false,
+    contact: { firstName: "", lastName: "", email: "", phone: "" },
+    cardLast4: ""
+  };
+
+  let loginCameFrom = "checkout";
+
+  function goTo(screenId, fromScreen) {
+    if (screenId === "login") {
+      loginCameFrom = fromScreen || "checkout";
+      const fromHome = loginCameFrom === "home";
+      document.getElementById("loginBackBtn").textContent = fromHome ? "< Home" : "< Checkout";
+      document.getElementById("loginAltText").textContent = fromHome ? "Just browsing?" : "Don't have an account?";
+      document.getElementById("loginAltBtn").textContent = fromHome ? "Browse Bikes" : "Checkout as Guest";
+    }
+    document.querySelectorAll(".screen").forEach(screen => screen.classList.remove("active"));
+    const target = document.getElementById(screenId);
+    target.classList.add("active");
+    document.getElementById("screenLabel").textContent = target.dataset.title;
+    target.querySelector(".content").scrollTop = 0;
+    refreshSummaries();
+  }
+
+  function renderCatalogue() {
+    const selectedType = document.getElementById("filterType").value;
+    const selectedSize = document.getElementById("filterSize").value;
+    const matchingBikes = bikes.filter(bike =>
+      (selectedType === "All" || bike.type === selectedType) &&
+      (selectedSize === "All" || bike.size === selectedSize)
+    );
+    document.getElementById("matchCount").textContent =
+      matchingBikes.length + (matchingBikes.length === 1 ? " bike matches" : " bikes match") + " your filters";
+    const list = document.getElementById("bikeList");
+    list.innerHTML = "";
+    if (matchingBikes.length === 0) {
+      list.innerHTML = '<div class="muted">No bikes match. Try a different type or size.</div>';
+      return;
+    }
+    matchingBikes.forEach(bike => {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML =
+        '<div class="placeholder">[Photo]</div>' +
+        '<div style="flex: 1"><strong>' + bike.name + '</strong>' +
+        '<div class="muted">' + bike.type + ' · ' + bike.size + ' · $' + bike.price + '/day</div></div>';
+      const viewButton = document.createElement("button");
+      viewButton.className = "small-btn";
+      viewButton.textContent = "View";
+      viewButton.onclick = () => selectBike(bike);
+      card.appendChild(viewButton);
+      list.appendChild(card);
+    });
+  }
+
+  function selectBike(bike) {
+    reservation.bike = bike;
+    document.getElementById("detailName").textContent = bike.name;
+    document.getElementById("detailDesc").textContent = bike.desc;
+    document.getElementById("detailType").textContent = bike.type;
+    document.getElementById("detailSize").textContent = bike.size;
+    document.getElementById("detailPrice").textContent = "$" + bike.price + "/day";
+    updateTotal();
+    goTo("details");
+  }
+
+  function rentalDays() {
+    const pickup = document.getElementById("pickupDate").value;
+    const dropoff = document.getElementById("returnDate").value;
+    if (!pickup || !dropoff) return 0;
+    const msPerDay = 24 * 60 * 60 * 1000;
+    const difference = (new Date(dropoff) - new Date(pickup)) / msPerDay;
+    return difference < 0 ? -1 : Math.max(1, difference);
+  }
+
+  function updateTotal() {
+    const days = rentalDays();
+    reservation.days = days;
+    reservation.total = reservation.bike && days > 0 ? days * reservation.bike.price : 0;
+    refreshSummaries();
+  }
+
+  function formatDateTime(dateId, timeId) {
+    const dateValue = document.getElementById(dateId).value;
+    const timeValue = document.getElementById(timeId).value;
+    if (!dateValue) return "—";
+    const [year, month, day] = dateValue.split("-");
+    let timeText = "";
+    if (timeValue) {
+      let [hours, minutes] = timeValue.split(":").map(Number);
+      const suffix = hours >= 12 ? "PM" : "AM";
+      hours = hours % 12 || 12;
+      timeText = ", " + hours + ":" + String(minutes).padStart(2, "0") + " " + suffix;
+    }
+    return Number(month) + "/" + Number(day) + timeText;
+  }
+
+  function refreshSummaries() {
+    const bike = reservation.bike;
+    document.querySelectorAll(".bikeName").forEach(el => el.textContent = bike ? bike.name : "—");
+    document.querySelectorAll(".bikeMeta").forEach(el => el.textContent = bike ? bike.type + " · " + bike.size : "");
+    document.querySelectorAll(".pickupText").forEach(el => el.textContent = formatDateTime("pickupDate", "pickupTime"));
+    document.querySelectorAll(".returnText").forEach(el => el.textContent = formatDateTime("returnDate", "returnTime"));
+    const totalText = reservation.total > 0
+      ? "$" + reservation.total + " (" + reservation.days + (reservation.days === 1 ? " day)" : " days)")
+      : "—";
+    document.querySelectorAll(".totalText").forEach(el => el.textContent = totalText);
+    const contact = reservation.contact;
+    document.getElementById("reviewDetails").textContent =
+      (contact.firstName + " " + contact.lastName).trim() + " · " + contact.email + (contact.phone ? " · " + contact.phone : "");
+    document.getElementById("reviewPayment").textContent =
+      reservation.cardLast4 ? "Card ending " + reservation.cardLast4 : "—";
+  }
+
+  function submitPeriod() {
+    const error = document.getElementById("periodError");
+    const days = rentalDays();
+    if (!document.getElementById("pickupDate").value || !document.getElementById("returnDate").value) {
+      error.textContent = "Choose a pickup date and a return date.";
+      return;
+    }
+    if (days < 0) {
+      error.textContent = "Return date can't be before the pickup date.";
+      return;
+    }
+    error.textContent = "";
+    updateTotal();
+    goTo("checkout");
+  }
+
+  function submitGuest() {
+    const error = document.getElementById("guestError");
+    const firstName = document.getElementById("firstName").value.trim();
+    const lastName = document.getElementById("lastName").value.trim();
+    const email = document.getElementById("email").value.trim();
+    const phone = document.getElementById("phone").value.trim();
+    if (!firstName || !lastName || !email || !phone) {
+      error.textContent = "Fill in your name, email, and phone.";
+      return;
+    }
+    if (!email.includes("@")) {
+      error.textContent = "Enter a valid email address.";
+      return;
+    }
+    error.textContent = "";
+    reservation.signedIn = false;
+    reservation.contact = { firstName, lastName, email, phone };
+    document.getElementById("paymentBackBtn").textContent = "< Your Details";
+    document.getElementById("paymentStep").textContent = "Step 2 of 2 · Payment Method";
+    goTo("payment");
+  }
+
+  function submitLogin() {
+    const error = document.getElementById("loginError");
+    const email = document.getElementById("loginEmail").value.trim();
+    const password = document.getElementById("loginPassword").value;
+    if (!email.includes("@") || !password) {
+      error.textContent = "Enter your email and password.";
+      return;
+    }
+    error.textContent = "";
+    reservation.signedIn = true;
+    // Prototype: a signed-in customer's saved details are filled in for them.
+    reservation.contact = { firstName: "Saved", lastName: "Customer", email: email, phone: "(541) 555-0100" };
+    document.getElementById("paymentBackBtn").textContent = "< Sign In";
+    document.getElementById("paymentStep").textContent = "Signed in as " + email + " · Payment Method";
+    if (!reservation.bike) {
+      goTo("catalogue");
+      return;
+    }
+    goTo("payment");
+  }
+
+  function loginAlternative() {
+    goTo(loginCameFrom === "home" ? "catalogue" : "guest");
+  }
+
+  function loginBack() {
+    goTo(loginCameFrom);
+  }
+
+  function paymentBack() {
+    goTo(reservation.signedIn ? "login" : "guest");
+  }
+
+  function editDetails() {
+    goTo(reservation.signedIn ? "login" : "guest");
+  }
+
+  function submitPayment() {
+    const error = document.getElementById("paymentError");
+    const cardDigits = document.getElementById("cardNumber").value.replace(/\D/g, "");
+    const expiration = document.getElementById("cardExp").value.trim();
+    const cvc = document.getElementById("cardCvc").value.trim();
+    const zip = document.getElementById("cardZip").value.trim();
+    if (cardDigits.length < 12 || !expiration || !cvc || !zip) {
+      error.textContent = "Fill in all card fields (card number must be at least 12 digits).";
+      return;
+    }
+    error.textContent = "";
+    reservation.cardLast4 = cardDigits.slice(-4);
+    goTo("review");
+  }
+
+  function finalize() {
+    const error = document.getElementById("reviewError");
+    if (!document.getElementById("agreeTerms").checked) {
+      error.textContent = "Check the box to agree to the rental terms.";
+      return;
+    }
+    error.textContent = "";
+    document.getElementById("confirmEmail").textContent = reservation.contact.email;
+    document.getElementById("confirmNumber").textContent = "BBS-" + Math.floor(100000 + Math.random() * 900000);
+    goTo("confirmation");
+  }
+
+  function resetDemo() {
+    location.reload();
+  }
+
+  // Default the rental to tomorrow, one day long.
+  (function setDefaultDates() {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const dayAfter = new Date(tomorrow);
+    dayAfter.setDate(dayAfter.getDate() + 1);
+    const toInputValue = date => date.toISOString().slice(0, 10);
+    document.getElementById("pickupDate").value = toInputValue(tomorrow);
+    document.getElementById("returnDate").value = toInputValue(dayAfter);
+  })();
+
+  renderCatalogue();
+  refreshSummaries();
+</script>
+</body>
+</html>
